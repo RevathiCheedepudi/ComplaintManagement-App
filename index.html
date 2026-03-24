@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Complaint Management System</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #e0f7fa, #e8f5e9);
+  color: #333;
+}
+
+  h1 {
+    text-align: center;
+    color:rgb(0, 153, 255);
+    padding: 20px;
+    letter-spacing: 1px;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: auto;
+    padding: 20px;
+  }
+
+  .card {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+  }
+
+  input, textarea {
+    width: 90%;
+    padding: 12px;
+    margin-top: 10px;
+    border-radius: 10px;
+    border: none;
+    outline: none;
+  }
+
+  button {
+    border: none;
+    border-radius: 10px;
+    padding: 10px 15px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+  }
+
+  button:hover {
+    transform: scale(1.05);
+  }
+
+  .submit-btn {
+    background: #00c853;
+    color: white;
+    margin-top: 10px;
+  }
+
+  .admin-btn {
+    background: #09ecf8;
+    color: white;
+    float: right;
+  }
+
+  .complaint {
+    background: white;
+    border-radius: 12px;
+    padding: 15px;
+    margin-top: 12px;
+    transition: 0.3s;
+  }
+
+  .complaint:hover {
+    transform: translateY(-3px);
+    box-shadow: 0px 5px 15px rgba(0,0,0,0.2);
+  }
+
+  .status {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    color: white;
+  }
+
+  .pending {
+    background: #e53935;
+  }
+
+  .resolved {
+    background: #43a047;
+  }
+
+  .actions {
+    margin-top: 10px;
+  }
+
+  .actions button {
+    margin-right: 8px;
+  }
+
+  .resolve-btn {
+    background: #4caf50;
+    color: white;
+  }
+
+  .delete-btn {
+    background: #e53935;
+    color: white;
+  }
+
+</style>
+</head>
+
+<body>
+
+<h1> Complaint Management System</h1>
+
+<div class="container">
+
+  <div class="card">
+    <button class="admin-btn" onclick="enterAdmin()">Admin Mode </button>
+
+    <h2>Submit Complaint</h2>
+    <input type="text" id="name" placeholder="👤 Your Name">
+    <textarea id="issue" placeholder="📝 Describe your issue"></textarea>
+    <button class="submit-btn" onclick="addComplaint()">Submit Complaint</button>
+  </div>
+
+  <div class="card">
+    <h2>📋 Complaints</h2>
+    <div id="complaintList"></div>
+  </div>
+
+</div>
+
+<script>
+const API = "http://localhost:5000";
+let adminKey = null;
+
+async function addComplaint() {
+  const name = document.getElementById("name").value;
+  const issue = document.getElementById("issue").value;
+
+  if (!name || !issue) {
+    alert("Fill all fields");
+    return;
+  }
+
+  await fetch(`${API}/complaint`, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({name, issue})
+  });
+
+  document.getElementById("name").value = "";
+  document.getElementById("issue").value = "";
+
+  loadComplaints();
+}
+
+async function loadComplaints() {
+  const res = await fetch(`${API}/complaints`);
+  const data = await res.json();
+
+  const list = document.getElementById("complaintList");
+  list.innerHTML = "";
+
+  data.forEach(c => {
+    const div = document.createElement("div");
+    div.className = "complaint";
+
+    div.innerHTML = `
+      <h3>👤 ${c.name}</h3>
+      <p>${c.issue}</p>
+      <span class="status ${c.status === "Pending" ? "pending" : "resolved"}">
+        ${c.status}
+      </span>
+
+      <div class="actions">
+        ${adminKey ? `
+          <button class="resolve-btn" onclick="resolve(${c.id})">✔ Resolve</button>
+          <button class="delete-btn" onclick="deleteComplaint(${c.id})">🗑 Delete</button>
+        ` : ""}
+      </div>
+    `;
+
+    list.appendChild(div);
+  });
+}
+
+async function resolve(id) {
+  await fetch(`${API}/resolve/${id}`, {
+    method: "PUT",
+    headers: {"admin-key": adminKey}
+  });
+  loadComplaints();
+}
+
+async function deleteComplaint(id) {
+  await fetch(`${API}/delete/${id}`, {
+    method: "DELETE",
+    headers: {"admin-key": adminKey}
+  });
+  loadComplaints();
+}
+
+function enterAdmin() {
+  const key = prompt("Enter Admin Key:");
+
+  if (key === "12345") {
+    adminKey = key;
+    alert("Admin Mode Activated ✅");
+    loadComplaints();
+  } else {
+    alert("Wrong Key ❌");
+  }
+}
+
+loadComplaints();
+</script>
+
+</body>
+</html>

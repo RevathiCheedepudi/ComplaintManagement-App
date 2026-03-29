@@ -4,6 +4,19 @@ const cors = require("cors");
 const app = express();
 app.use(express.json());
 app.use(cors());
+const path = require('path');
+
+
+app.use(cors());
+app.use(express.json());
+
+// ✅ Serve frontend
+app.use(express.static(path.join(__dirname, 'public')));
+
+// ✅ Default route (open UI)
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/index.html'));
+});
 
 // 🔑 Admin Key (you can change this)
 const ADMIN_KEY = "12345";
@@ -12,10 +25,6 @@ const ADMIN_KEY = "12345";
 let complaints = [];
 let idCounter = 1;
 
-// 🟢 Home route
-app.get("/", (req, res) => {
-  res.send("Complaint Management API is running...");
-});
 
 // 🟢 Get all complaints
 app.get("/complaints", (req, res) => {
@@ -85,10 +94,15 @@ app.delete("/delete/:id", checkAdmin, (req, res) => {
 
 // 🚀 Start server
 const PORT = 5000;
-if (require.main === module) {
-  app.listen(5000, () => {
-    console.log("Server running");
+
+
+// ✅ Start server ONLY if not in test mode
+if (process.env.NODE_ENV !== "test") {
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
   });
 }
+
+module.exports = app;
 
 module.exports = app;

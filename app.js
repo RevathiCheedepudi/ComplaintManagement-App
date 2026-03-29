@@ -85,6 +85,10 @@ app.delete("/delete/:id", checkAdmin, (req, res) => {
 
 // 🚀 Start server
 const PORT = 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+if (require.main === module) {
+  app.listen(5000, () => {
+    console.log("Server running");
+  });
+}
+
+module.exports = app;
